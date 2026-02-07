@@ -55,8 +55,21 @@ tsconfig.json:
     "outDir": "./dist"
   }
 
+9. create turbo.json file for each projects and write below content. we state the output folder .
 
-9. install express in http-backend to start express server :
+http-backend and ws-backend/turbo.json:
+
+{
+    "extends":["//"],
+    "tasks":{
+        "build":{
+            "outputs":["dist/**"]
+        }
+    }
+}
+
+
+10 install express in http-backend to start express server :
 go to C:\HarkiratWebDev\Excalidraw\draw-app\apps\http-backend> in terminal. 
 pnpm add express @types/express
 
