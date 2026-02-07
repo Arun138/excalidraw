@@ -1,0 +1,63 @@
+turborepo project setups:
+1. initiate an aempty turborepo 
+2. delete the docs app ( because we need one frontend for thid peoject)
+3. add http-server, ws-server 
+4. add package.json in both places 
+5. add tsconfig.json in both places and import it from @repo/typescript-config/base.json
+6. add @repo/typescript-config as a dependency in both ws-server and http-server 
+7. add a build, dev and start script to both the projects 
+8. Update the turbo-config in both the projects (optional)
+9. Initialize a http and websocket server  
+
+
+
+
+
+
+1.install pnpn system wide: npm i -g pnpm
+2.install turborepo through pnpm : npx create-turbo@latest
+
+3. we deleted 'docs' for this project 
+
+4. created http-backend and ws-backend 
+5. initiated node project, created tsconfig.json in both. 
+5. in tsconfig.json, we need to extend the base.json from typescript-config .
+6. add dependencies in package.json file: add below code.
+
+  "dependencies": {
+    "@repo/typescript-config":"workspace:*" 
+  },
+
+we are picking dependency from the current workspace, not from the npm registry.
+"workspace:*" if using pnpm
+"*" if using npm
+
+7. write below code in tsconfig.json to extend:
+{
+    "extends":"@repo/typescript-config/base.json"
+}
+
+
+8. typescript setups in each folders:
+package.json:
+
+  "scripts": {
+    "build": "tsc -b",
+    "start": "node ./dist/index.js",
+    "dev": "npm run build && npm run start"
+  },
+
+
+tsconfig.json:
+
+  "compilerOptions": {
+    "rootDir": "./src",
+    "outDir": "./dist"
+  }
+
+
+9. install express in http-backend to start express server :
+go to C:\HarkiratWebDev\Excalidraw\draw-app\apps\http-backend> in terminal. 
+pnpm add express @types/express
+
+
