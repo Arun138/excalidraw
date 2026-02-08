@@ -1,0 +1,34 @@
+Let say we need to create a common folder.
+
+Let say config.ts, whose data will be used by multiple project files.
+We can create a common project: backend-common
+
+npm init -y
+Edit package.json:    
+"name": "@repo/backend-common",
+...
+"devDependencies": {
+    "@repo/typescript-config":"workspace:*"
+},
+
+create tsconfig.json. extend the common ts-config: 
+{
+  "extends": "@repo/typescript-config/base.json"
+}
+
+create /src/config.ts:
+export const JWT_SECRET = process.env.JWT_SECRET ?? "jwt_secret"
+
+"process" will show type error. we need to install node types : pnpm i @types/node 
+
+reinstall pnpm: pnpm install 
+
+
+in other project import JWT_SECRET and use it:
+import {JWT_SECRET} from "@repo/backend-common/config" 
+
+
+
+
+
+

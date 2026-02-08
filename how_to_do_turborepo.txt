@@ -4,7 +4,7 @@ turborepo project setups:
 3. add http-server, ws-server 
 4. add package.json in both places 
 5. add tsconfig.json in both places and import it from @repo/typescript-config/base.json
-6. add @repo/typescript-config as a dependency in both ws-server and http-server 
+6. add @repo/typescript-config as a dependency or devDependency in both ws-server and http-server 
 7. add a build, dev and start script to both the projects 
 8. Update the turbo-config in both the projects (optional)
 9. Initialize a http and websocket server  
@@ -22,8 +22,9 @@ turborepo project setups:
 4. created http-backend and ws-backend 
 5. initiated node project, created tsconfig.json in both. 
 5. in tsconfig.json, we need to extend the base.json from typescript-config .
-6. add dependencies in package.json file: add below code.
+6. add dependencies or devDependency in package.json file: add below code.
 
+  "devDependencies": or
   "dependencies": {
     "@repo/typescript-config":"workspace:*" 
   },
