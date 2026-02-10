@@ -1,23 +1,24 @@
 {
-  "name": "@repo/common",
+  "name": "@repo/db",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "exports": {
-    "./zod": "./src/zod.ts"
-  },
-  "devDependencies": {
-    "@repo/typescript-config": "workspace:*"
-  },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "module",
   "dependencies": {
+    "@types/mongoose": "^5.11.97",
     "@types/node": "^22.15.3",
-    "zod": "^4.3.6"
+    "mongoose": "^9.1.6"
+  },
+  "devDependencies": {
+    "@repo/typescript-config": "workspace:*"
+  },
+  "exports":{
+    "./db":"./src/db.ts"
   }
 }

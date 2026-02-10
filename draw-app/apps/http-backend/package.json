@@ -12,6 +12,8 @@
     "@repo/typescript-config": "workspace:*",
     "@repo/backend-common":"workspace:*",
     "@repo/common":"workspace:*",
+    "@repo/db":"workspace:*",
+    "@repo/db-prisma":"workspace:*",
     "@types/express": "^5.0.6",
     "express": "^5.2.1"
   },
