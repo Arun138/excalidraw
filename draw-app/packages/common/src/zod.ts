@@ -11,9 +11,9 @@ const signInSchema = z.object({
     password:z.string().min(8)
 })
 
-const webSocketSchema = z.object({
+const createRoomSchema = z.object({
     name:z.string().min(1)
 })
 
 
-export {signInSchema,signUpSchema,webSocketSchema}
+export {signInSchema,signUpSchema,createRoomSchema}
