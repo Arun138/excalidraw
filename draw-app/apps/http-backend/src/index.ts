@@ -6,15 +6,16 @@ import { signInSchema, signUpSchema, createRoomSchema } from "@repo/common/zod";
 
 import { Chat, mongoose, Room, User } from "@repo/db/db"; // mongodb model
 
-
 // import { prisma } from "@repo/db-prisma/prisma"; // prisma didn't work
 
 import jwt from "jsonwebtoken";
+import cors from 'cors'
 import { authMiddleware } from "./middleware.js";
 
 const app = express();
 
 app.use(express.json());
+app.use(cors());
 
 app.post("/signup", async (req, res) => {
   const parsedContent = signUpSchema.safeParse(req.body);
@@ -97,6 +98,8 @@ app.post("/signin", async (req, res) => {
 });
 
 app.get("/room", authMiddleware, async (req, res) => {
+  // to create room
+  // req.body will contain only slug name
   const parsedContent = createRoomSchema.safeParse(req.body);
   if (!parsedContent.success) {
     return res
@@ -117,17 +120,25 @@ app.get("/room", authMiddleware, async (req, res) => {
   }
 });
 
-
-app.get("/chats/:roomId",authMiddleware, async (req,res) => {
-  const room = String(req.params.roomId)
-  const messages = await Chat.find({room:new mongoose.Types.ObjectId(room)}).sort({_id:-1}).limit(50) // "new mongoose.Types.ObjectId" converts "room" from string to an ObjectId. 
-  res.json({messages})
+app.get('/allRooms', async (req,res) => {
+  const allRooms = await Room.find()
+  return res.status(200).json(allRooms)
 })
 
-app.get("/room/:slug",async (req,res)=>{
-  const slug = String(req.params.slug)
-  const room = await Room.findOne({slug})
-  return room?._id
-})
+app.get("/room/:slug", async (req, res) => {
+  // to just fetch the room id from the given slug. Only useful for frontend
+  const slug = String(req.params.slug);
+  const room = await Room.findOne({ slug });
+  return room?._id;
+});
+
+app.get("/chats/:roomId", async (req, res) => {
+  // to fetch messages of a room
+  const room = String(req.params.roomId);
+  const messages = await Chat.find({ room: new mongoose.Types.ObjectId(room) })
+    .sort({ _id: -1 })
+    .limit(50); // "new mongoose.Types.ObjectId" converts "room" from string to an ObjectId.
+  res.json({ messages });
+});
 
 app.listen(3001);

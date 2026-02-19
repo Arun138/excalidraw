@@ -60,17 +60,12 @@ wss.on("connection", function connection(ws, request) {
 
     // parsedData = {type:"join-room",roomId:1}
     if (parsedData.type === "join-room") {
-      console.log("user before joining:",user.rooms);
-      
       user.rooms.push(parsedData.roomId);
-      console.log("user after joining:",user.rooms);
     }
     
     // parsedData = {type:"leave-room",roomId:1}
     if (parsedData.type === "leave-room") {
-      console.log("user before leaving:",user.rooms);
       user.rooms = user?.rooms.filter((x) => x !== parsedData.roomId);
-      console.log("user after leaving:",user.rooms);
     }
 
     // parsedData = {type:"chat",message:"xyz",roomId:1}
