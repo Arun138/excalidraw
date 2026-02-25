@@ -22,18 +22,18 @@ export function ChatRoomClient({
           roomId,
         }),
       );
-    const handleMessage = (event: MessageEvent) => {
-      const parsedData = JSON.parse(event.data);
-      if (parsedData.type === "chat") {
-        setChats((c) => [...c, { message: parsedData.message }]);
-      }
-    };
+      const handleMessage = (event: MessageEvent) => {
+        const parsedData = JSON.parse(event.data);
+        if (parsedData.type === "chat") {
+          setChats((c) => [...c, { message: parsedData.message }]);
+        }
+      };
 
-    socket.addEventListener("message", handleMessage);
+      socket.addEventListener("message", handleMessage);
 
-    return () => {
-      socket.removeEventListener("message", handleMessage); // ✅ cleanup
-    };
+      return () => {
+        socket.removeEventListener("message", handleMessage); // ✅ cleanup
+      };
     }
   }, [socket, loading, roomId]);
 

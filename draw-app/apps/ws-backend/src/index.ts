@@ -1,7 +1,7 @@
 import WebSocket, { WebSocketServer } from "ws";
 import jwt from "jsonwebtoken";
 import { JWT_SECRET } from "@repo/backend-common/config";
-import {Chat} from '@repo/db/db'
+import {Chat,mongoose} from '@repo/db/db'
 
 let wss = new WebSocketServer({ port: 8080 });
 
@@ -51,7 +51,15 @@ wss.on("connection", function connection(ws, request) {
 
   ws.on("message", async function message(data) {
     // parse incoming data
-    const parsedData = JSON.parse(data as unknown as string); // data = '{type:"join-room",roomId:1}'
+    // const parsedData = JSON.parse(data as unknown as string); // data = '{type:"join-room",roomId:1}'
+    // OR 
+    let parsedData ;
+     if (typeof data !== "string") {
+      parsedData = JSON.parse(data.toString()); // {type: "join-room", roomId: 1}
+    } else {
+
+      parsedData = JSON.parse(data); // {type: "join-room", roomId: 1}
+    }
 
     const user = users.find((x) => x.ws === ws);
     if (!user) {
@@ -72,8 +80,9 @@ wss.on("connection", function connection(ws, request) {
     if (parsedData.type === "chat") {
       const roomId = parsedData.roomId;
       const message = parsedData.message;
-
-      await Chat.create({message,room:roomId,user:userId}) // storing in db is a slow process, especially when we need to show the chats after db update. we are supposed to use Queue and push it through an async pipeline 
+      console.log(roomId,message);
+      
+      await Chat.create({message,room:new mongoose.Types.ObjectId(roomId),user:userId}) // storing in db is a slow process, especially when we need to show the chats after db update. we are supposed to use Queue and push it through an async pipeline 
 
       users.forEach((user) => {
         if (user.rooms.includes(roomId)) {
