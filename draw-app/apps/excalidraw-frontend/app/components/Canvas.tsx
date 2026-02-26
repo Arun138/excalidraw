@@ -9,12 +9,13 @@ export function Canvas({
   socket: WebSocket;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const choosenShape = useRef<string>('rect');
 
   useEffect(() => {
-    if (canvasRef.current) {
-      InitDraw(canvasRef.current, roomId, socket);
+    if (canvasRef.current && choosenShape) {
+      InitDraw(canvasRef.current, roomId, socket,choosenShape);
     }
-  }, [canvasRef]);
+  }, [canvasRef,choosenShape]);
 
   if (!socket) {
     return <div>Connecting to server ...</div>;
@@ -23,6 +24,13 @@ export function Canvas({
   return (
     <div>
       <canvas ref={canvasRef} width={1550} height={750}></canvas>
+      <div className="">
+        <button onClick={()=>{choosenShape.current = 'rect';
+        }}>Rectangle</button>
+        <button onClick={()=>{choosenShape.current = 'circle';
+        }}>Circle</button>
+        <button onClick={()=>choosenShape.current = 'ellipse'}>Ellipse</button>
+      </div>
     </div>
   );
 }

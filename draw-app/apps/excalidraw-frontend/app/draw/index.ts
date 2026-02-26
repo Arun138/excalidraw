@@ -14,12 +14,20 @@ type Shape =
       centerX: number;
       centerY: number;
       radius: number;
+    }
+  | {
+      type: "ellipse";
+      centerX: number;
+      centerY: number;
+      radiusX: number;
+      radiusY: number;
     };
 
 export default async function InitDraw(
   canvas: HTMLCanvasElement,
   roomId: string,
   socket: WebSocket,
+  choosenShape: {current:string},
 ) {
   const ctx = canvas.getContext("2d"); // getting the context of the canvas
 
@@ -54,13 +62,35 @@ export default async function InitDraw(
     clicked = false;
     const width = e.clientX - startX;
     const height = e.clientY - startY;
-    const shape: Shape = {
-      type: "rect",
-      x: startX,
-      y: startY,
-      height,
-      width,
-    };
+    let shape: Shape;
+    console.log('choosenShape:',choosenShape.current);
+    
+
+    if (choosenShape.current == "rect") {
+      shape = {
+        type: "rect",
+        x: startX,
+        y: startY,
+        height,
+        width,
+      };
+    } else if (choosenShape.current == "circle") {
+      shape = {
+        type: "circle",
+        centerX: startX + width / 2,
+        centerY: startY + height / 2,
+        radius:  Math.abs(width/2),
+      };
+    } else {
+      shape = {
+        type: "ellipse",
+        centerX: startX + width / 2,
+        centerY: startY + height / 2,
+        radiusX:  Math.abs(width/2),
+        radiusY:  Math.abs(height/2),
+      };
+    }
+
     existingShapes.push(shape);
     socket.send(
       JSON.stringify({
@@ -77,8 +107,18 @@ export default async function InitDraw(
       const height = e.clientY - startY;
       clearCanvas(existingShapes, canvas, ctx);
       ctx.strokeStyle = "rgba(255,255,255)";
-      ctx.strokeRect(startX, startY, width, height); // draw the rectange in each mousemove
-      // ctx.strokeRect(100,25,10,100) // .strokeRect(x-coordinte in screen,y-coordinte in screen,width of the rectange, length of the rectangle)
+      if (choosenShape.current == "rect") {
+        ctx.strokeRect(startX, startY, width, height); // draw the rectange in each mousemove
+        // ctx.strokeRect(100,25,10,100) // .strokeRect(x-coordinte in screen,y-coordinte in screen,width of the rectange, length of the rectangle)
+      } else if (choosenShape.current == "circle") {
+        ctx.beginPath();
+        ctx.arc(startX + width/2 , startY + height / 2, Math.abs(width/2), 0, Math.PI * 2); // wider than tall
+        ctx.stroke();
+      } else {
+        ctx.beginPath();
+ctx.ellipse(startX + width/2 , startY + height / 2, Math.abs(width/2), Math.abs(height/2), 0, 0, Math.PI * 2); // wider than tall
+        ctx.stroke();
+      }
     }
   });
 }
@@ -95,9 +135,19 @@ function clearCanvas(
 
   // Render all shapes
   existingShapes.map((shape) => {
+    ctx.strokeStyle = "rgba(255,255,255)";
     if (shape.type === "rect") {
-      ctx.strokeStyle = "rgba(255,255,255)";
       ctx.strokeRect(shape.x, shape.y, shape.width, shape.height); // draw the rectange in each mousemove
+    } else if (shape.type === "circle") {
+      // ctx.strokeStyle = "rgba(255,255,255)";
+      ctx.beginPath();
+      ctx.arc(shape.centerX, shape.centerY, shape.radius,  0, Math.PI * 2); // draw the circle in each mousemove
+        ctx.stroke();
+    
+    } else  {
+      ctx.beginPath();
+      ctx.ellipse(shape.centerX, shape.centerY, shape.radiusX,shape.radiusY,0,  0, Math.PI * 2); // draw the ellipse in each mousemove
+        ctx.stroke();
     }
   });
 }
