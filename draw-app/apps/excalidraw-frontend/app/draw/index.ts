@@ -16,25 +16,17 @@ type Shape =
       radius: number;
     }
   | {
-      type: "ellipse";
+      type: "pencil";
       centerX: number;
       centerY: number;
-      radiusX: number;
-      radiusY: number;
-    }
-  | {
-      type: "line";
-      startX: number;
-      startY: number;
       endX: number;
       endY: number;
-    }
+    };
 
 export default async function InitDraw(
   canvas: HTMLCanvasElement,
   roomId: string,
   socket: WebSocket,
-  choosenShape: { current: string },
 ) {
   const ctx = canvas.getContext("2d"); // getting the context of the canvas
 
@@ -69,10 +61,11 @@ export default async function InitDraw(
     clicked = false;
     const width = e.clientX - startX;
     const height = e.clientY - startY;
-    let shape: Shape;
-    console.log("choosenShape:", choosenShape.current);
 
-    if (choosenShape.current == "rect") {
+    // @ts-ignore
+    const selectedTool = window.selectedTool;
+    let shape: Shape | null = null;
+    if (selectedTool === "rect") {
       shape = {
         type: "rect",
         x: startX,
@@ -80,31 +73,21 @@ export default async function InitDraw(
         height,
         width,
       };
-    } else if (choosenShape.current == "circle") {
+    } else if (selectedTool === "circle") {
+      const radius = Math.max(width, height) / 2;
       shape = {
         type: "circle",
-        centerX: startX + width / 2,
-        centerY: startY + height / 2,
-        radius: Math.abs(width / 2),
+        radius,
+        centerX: startX + radius,
+        centerY: startY + radius,
       };
-    } else if (choosenShape.current == "ellipse") {
-      shape = {
-        type: "ellipse",
-        centerX: startX + width / 2,
-        centerY: startY + height / 2,
-        radiusX: Math.abs(width / 2),
-        radiusY: Math.abs(height / 2),
-      };
-    } else {
-      shape = {
-        type: "line",
-        startX,
-        startY,
-        endX: e.clientX,
-        endY: e.clientY,
-      };
-    } 
+    }
+
+    if (!shape) {
+      return;
+    }
     existingShapes.push(shape);
+
     socket.send(
       JSON.stringify({
         type: "chat",
@@ -118,41 +101,22 @@ export default async function InitDraw(
     if (clicked) {
       const width = e.clientX - startX;
       const height = e.clientY - startY;
-
       clearCanvas(existingShapes, canvas, ctx);
       ctx.strokeStyle = "rgba(255,255,255)";
-
-      if (choosenShape.current == "rect") {
+      // @ts-ignore
+      const selectedTool = window.selectedTool;
+      if (selectedTool === "rect") {
         ctx.strokeRect(startX, startY, width, height); // draw the rectange in each mousemove
         // ctx.strokeRect(100,25,10,100) // .strokeRect(x-coordinte in screen,y-coordinte in screen,width of the rectange, length of the rectangle)
-      } else if (choosenShape.current == "circle") {
+      } else if (selectedTool === "circle") {
+        const radius = Math.max(width, height) / 2;
+        const centerX = startX + radius;
+        const centerY = startY + radius;
         ctx.beginPath();
-        ctx.arc(
-          startX + width / 2,
-          startY + height / 2,
-          Math.abs(width / 2),
-          0,
-          Math.PI * 2,
-        );
+        ctx.arc(centerX, centerY, Math.abs(radius), 0, Math.PI * 2);
         ctx.stroke();
-      } else if (choosenShape.current == "ellipse") {
-        ctx.beginPath();
-        ctx.ellipse(
-          startX + width / 2,
-          startY + height / 2,
-          Math.abs(width / 2),
-          Math.abs(height / 2),
-          0,
-          0,
-          Math.PI * 2,
-        );
-        ctx.stroke();
-      } else  {
-        ctx.beginPath();
-        ctx.moveTo(startX, startY);
-        ctx.lineTo(e.clientX, e.clientY);
-        ctx.stroke();
-      } 
+        ctx.closePath();
+      }
     }
   });
 }
@@ -173,27 +137,16 @@ function clearCanvas(
     if (shape.type === "rect") {
       ctx.strokeRect(shape.x, shape.y, shape.width, shape.height); // draw the rectange in each mousemove
     } else if (shape.type === "circle") {
-      // ctx.strokeStyle = "rgba(255,255,255)";
       ctx.beginPath();
-      ctx.arc(shape.centerX, shape.centerY, shape.radius, 0, Math.PI * 2); // draw the circle in each mousemove
-      ctx.stroke();
-    } else if (shape.type === "ellipse") {
-      ctx.beginPath();
-      ctx.ellipse(
+      ctx.arc(
         shape.centerX,
         shape.centerY,
-        shape.radiusX,
-        shape.radiusY,
-        0,
+        Math.abs(shape.radius),
         0,
         Math.PI * 2,
-      ); // draw the ellipse in each mousemove
+      );
       ctx.stroke();
-    } else {
-      ctx.beginPath();
-      ctx.moveTo(shape.startX, shape.startY);
-      ctx.lineTo(shape.endX, shape.endY);
-      ctx.stroke();
+      ctx.closePath();
     }
   });
 }
