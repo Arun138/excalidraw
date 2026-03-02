@@ -30,6 +30,11 @@ export class Game {
   private startY: number = 0;
   private pencilCoordinates: [number, number][] = [];
   private selectedTool: Tool = "circle";
+  private viewport = {
+    scale: 1,
+    offsetX: 0,
+    offsetY: 0,
+  };
 
   socket: WebSocket;
 
@@ -43,6 +48,9 @@ export class Game {
     this.init();
     this.initHandlers();
     this.initMouseHandlers();
+
+    this.ctx.shadowBlur = 1;
+    this.ctx.shadowColor = "rgba(0,0,0,0.3)";
   }
 
   setTool(tool: "circle" | "pencil" | "rect") {
@@ -52,9 +60,6 @@ export class Game {
   async init() {
     this.existingShapes = await getExistingShapes(this.roomId);
     this.clearCanvas();
-
-    this.ctx.shadowBlur = 1;
-    this.ctx.shadowColor = "rgba(0,0,0,0.3)";
   }
 
   initHandlers() {
@@ -69,14 +74,26 @@ export class Game {
   }
 
   clearCanvas() {
+    // 1.full reset
+    this.ctx.setTransform(1, 0, 0, 1, 0, 0);
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height); // erasing the previous rectange in each mousemove
 
+    // 2. apply viewport transform
+    this.ctx.setTransform(
+      this.viewport.scale,
+      0,
+      0,
+      this.viewport.scale,
+      this.viewport.offsetX,
+      this.viewport.offsetY,
+    );
+
+    // 3. draw everything
     this.ctx.fillStyle = "rgba(0,0,0)"; // Making it default: selecting black color
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height); // Making it default: rendering black (selected above) as bg color
 
     // Render all shapes
     this.existingShapes.map((shape) => {
-
       this.ctx.strokeStyle = "rgba(255,255,255)";
       if (shape.type === "rect") {
         this.ctx.strokeRect(shape.x, shape.y, shape.width, shape.height); // draw the rectange in each mousemove
@@ -114,17 +131,32 @@ export class Game {
     });
   }
 
+  screenToWorld(screenX: number, screenY: number) {
+    return {
+      x: (screenX - this.viewport.offsetX) / this.viewport.scale,
+      y: (screenY - this.viewport.offsetY) / this.viewport.scale,
+    };
+  }
+
   mouseDownhandler = (e) => {
     // If we use regular function (function () {---}),'this' refers to the HTMLCanvasElement (the object that triggered the event; here the 'canvas'), not your Game instance. When you write "this.clicked = true", the compiler thinks you're trying to set a property on the 'canvas' element, which doesn't have a 'clicked' property. Solution – use an arrow function . Arrow functions preserve the outer 'this' context, so 'this' will point to your Game instance.
     this.clicked = true;
-    this.startX = e.clientX;
-    this.startY = e.clientY;
+
+    const worldPosition = this.screenToWorld(e.offsetX, e.offsetY);
+
+    this.startX = worldPosition.x;
+    this.startY = worldPosition.y;
   };
 
   mouseUpHandler = (e) => {
     this.clicked = false;
-    const width = e.clientX - this.startX;
-    const height = e.clientY - this.startY;
+
+    const worldPosition = this.screenToWorld(e.clientX, e.clientY);
+    const currentX = worldPosition.x;
+    const currentY = worldPosition.y;
+
+    const width = currentX - this.startX;
+    const height = currentY - this.startY;
 
     // @ts-ignore
     const selectedTool = this.selectedTool;
@@ -171,9 +203,14 @@ export class Game {
     if (!this.clicked) {
       return;
     }
+
+    const worldPosition = this.screenToWorld(e.clientX, e.clientY);
+    const currentX = worldPosition.x;
+    const currentY = worldPosition.y;
+
     if (this.selectedTool !== "pencil") {
-      const width = e.clientX - this.startX;
-      const height = e.clientY - this.startY;
+      const width = currentX - this.startX;
+      const height = currentY - this.startY;
       this.clearCanvas();
       this.ctx.strokeStyle = "rgba(255,255,255)";
       // @ts-ignore
@@ -197,11 +234,33 @@ export class Game {
 
       this.ctx.beginPath();
       this.ctx.moveTo(this.startX, this.startY);
-      this.ctx.lineTo(e.clientX, e.clientY);
+      this.ctx.lineTo(currentX, currentY);
       this.ctx.stroke();
       this.pencilCoordinates.push([this.startX, this.startY]);
-      [this.startX, this.startY] = [e.clientX, e.clientY];
+      [this.startX, this.startY] = [currentX, currentY];
     }
+  };
+
+  mouseWheelHandler = (e) => {
+    e.preventDefault();
+
+    const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9; // scroll up = zoom in
+
+    // where is the mouse in the world space before zoom ?
+    const mouseWorldX =
+      (e.offsetX - this.viewport.offsetX) / this.viewport.scale;
+    const mouseWorldY =
+      (e.offsetY - this.viewport.offsetY) / this.viewport.scale;
+
+    // apply zoom
+    this.viewport.scale *= zoomFactor;
+    this.viewport.scale = Math.min(Math.max(this.viewport.scale, 0.1), 50);
+
+    // adjust offset so the point under stays fixed
+    this.viewport.offsetX = e.offsetX - mouseWorldX * this.viewport.scale;
+    this.viewport.offsetY = e.offsetY - mouseWorldY * this.viewport.scale;
+
+    this.clearCanvas();
   };
 
   initMouseHandlers() {
@@ -210,6 +269,10 @@ export class Game {
     this.canvas.addEventListener("mouseup", this.mouseUpHandler);
 
     this.canvas.addEventListener("mousemove", this.mouseMoveHandler);
+
+    this.canvas.addEventListener("wheel", this.mouseWheelHandler, {
+      passive: false,
+    });
   }
 
   destroy() {
@@ -218,5 +281,7 @@ export class Game {
     this.canvas.removeEventListener("mouseup", this.mouseUpHandler);
 
     this.canvas.removeEventListener("mousemove", this.mouseMoveHandler);
+
+    this.canvas.removeEventListener("wheel",this.mouseWheelHandler)
   }
 }
